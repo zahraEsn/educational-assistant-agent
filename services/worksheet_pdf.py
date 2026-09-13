@@ -354,6 +354,9 @@ def quiz_to_html(quiz_data: dict) -> str:
 
 
 def generate_worksheet_pdf(quiz_data: dict) -> bytes:
+    print("QUIZ DATA:")
+    print(quiz_data)
+
     html_content = quiz_to_html(quiz_data)
 
     font_config = FontConfiguration()

@@ -136,6 +136,15 @@ def apply_global_css() -> None:
             }}
 
 
+						/* =========================
+							Hide input instructions
+							========================= */
+
+						[data-testid="InputInstructions"] {{
+								display: none !important;
+						}}
+
+
             /* =========================
                Selectbox
             ========================= */

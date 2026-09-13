@@ -8,15 +8,6 @@ from services.ai import (
     get_available_models,
 )
 from services.worksheet_pdf import generate_worksheet_pdf
-from utils.ui import apply_global_css
-
-st.set_page_config(
-    page_title="پنل معلم",
-    page_icon=None,
-    layout="wide",
-)
-
-apply_global_css()
 
 
 def load_font(filename: str) -> str:
@@ -60,7 +51,7 @@ st.title("مشخصات دانش‌آموز")
 
 student_name = st.text_input(
     "نام دانش‌آموز",
-    placeholder="مثلاً سارا",
+    placeholder="مثلاً علی شعبانی",
 )
 
 education_level = st.selectbox(
@@ -156,44 +147,112 @@ if st.button(
                 question_count=question_count,
             )
 
-            pdf_bytes = generate_worksheet_pdf(quiz_data)
+            # اطمینان از وجود فیلد راهنمایی برای هر سؤال
+            for question in quiz_data.get("questions", []):
+                question.setdefault("hint", "")
 
             st.session_state.teacher_quiz = quiz_data
-            st.session_state.teacher_pdf = pdf_bytes
 
-            st.success("کاربرگ با موفقیت ساخته شد.")
+            # PDF قبلی را حذف کن تا فقط نسخه ویرایش‌شده ساخته شود
+            st.session_state.pop("teacher_pdf", None)
+
+            st.success(
+                "کاربرگ اولیه با موفقیت ساخته شد. اکنون می‌توانید سؤال‌ها را ویرایش کنید."
+            )
 
         except Exception as e:
             st.error(f"ساخت کاربرگ با خطا مواجه شد: {e}")
 
 
 # -------------------------
-# Preview
+# Edit / Preview
 # -------------------------
 
 if "teacher_quiz" in st.session_state:
 
     st.divider()
 
-    st.header("پیش‌نمایش سؤال‌ها")
+    st.header("ویرایش و پیش‌نمایش سؤال‌ها")
 
     quiz_data = st.session_state.teacher_quiz
 
-    for question in quiz_data.get("questions", []):
+    edited_questions = []
 
-        st.markdown(f"**{question['id']}. {question['question']}**")
+    with st.form("edit_worksheet_form"):
 
-        st.caption(
-            f"مهارت: {question.get('target_weakness', '')} | "
-            f"سطح: {question.get('difficulty', '')}"
+        for index, question in enumerate(quiz_data.get("questions", [])):
+
+            st.subheader(f"سؤال {index + 1}")
+
+            st.caption(
+                f"مهارت: {question.get('target_weakness', '')} | "
+                f"سطح: {question.get('difficulty', '')}"
+            )
+
+            edited_question = st.text_area(
+                "متن سؤال",
+                value=question.get("question", ""),
+                height=100,
+                key=f"question_{index}",
+            )
+
+            edited_hint = st.text_area(
+                "راهنمایی سؤال",
+                value=question.get("hint", ""),
+                height=80,
+                key=f"hint_{index}",
+            )
+
+            if "options" in question:
+
+                st.markdown("گزینه‌ها")
+
+                edited_options = []
+
+                for option_index, option in enumerate(question["options"]):
+
+                    edited_option = st.text_input(
+                        f"گزینه {option_index + 1}",
+                        value=str(option),
+                        key=f"option_{index}_{option_index}",
+                    )
+
+                    edited_options.append(edited_option)
+
+            else:
+                edited_options = None
+
+            edited_question_data = {
+                **question,
+                "question": edited_question,
+                "hint": edited_hint,
+            }
+
+            if edited_options is not None:
+                edited_question_data["options"] = edited_options
+
+            edited_questions.append(edited_question_data)
+
+            st.divider()
+
+        submitted = st.form_submit_button(
+            "ذخیره تغییرات و ساخت کاربرگ",
+            type="primary",
         )
 
-        if "options" in question:
-            for option in question["options"]:
-                st.write(f"- {option}")
+    if submitted:
 
-        st.write("")
+        updated_quiz = {
+            **quiz_data,
+            "questions": edited_questions,
+        }
 
+        pdf_bytes = generate_worksheet_pdf(updated_quiz)
+
+        st.session_state.teacher_quiz = updated_quiz
+        st.session_state.teacher_pdf = pdf_bytes
+
+        st.success("تغییرات ذخیره شد و نسخه نهایی کاربرگ ساخته شد.")
 
 # -------------------------
 # Download
