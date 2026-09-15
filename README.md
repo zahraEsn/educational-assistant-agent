@@ -1,268 +1,312 @@
-# 🎓 AI Tutor - Local AI Study Buddy
+# Educational Assistant Agent
 
-[![Python](https://img.shields.io/badge/Python-3.7%2B-blue.svg)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28%2B-red.svg)](https://streamlit.io/)
-[![Ollama](https://img.shields.io/badge/Ollama-Compatible-green.svg)](https://ollama.ai/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+An AI-powered educational assistant for Iranian elementary school students.
 
-A powerful, privacy-focused AI tutoring application that runs entirely on your local machine. Get personalized explanations and generate custom quizzes across multiple subjects without sending any data to external servers.
+The system combines a **local LLM**, **textbook-based RAG**, and **teacher-guided personalization** to help students learn their school subjects and practice the skills they need to improve.
 
 ![AI Tutor Demo](/image1.png)
 ![AI Tutor Demo](/image2.png)
 ![AI Tutor Demo](/image3.png)
+![AI Tutor Demo](/image4.png)
 
-## ✨ Features
 
-### 🎯 **Personalized Learning**
-- **Multiple Education Levels**: School, High School, Graduate, PG/PhD
-- **Subject Variety**: Math, History, Computer Science, Physics, Biology, Chemistry
-- **Adaptive Explanations**: Content complexity adjusts to your education level
+## Features
 
-### 🤖 **Dual Learning Modes**
-- **Explain a Topic**: Get detailed, step-by-step explanations with examples
-- **Generate a Quiz**: Create custom multiple-choice questions with explanations
+### Student Panel
 
-### 🔒 **100% Privacy**
-- **Local Processing**: All AI computations happen on your device
-- **No Data Transfer**: Your questions and conversations never leave your machine
-- **Offline Capable**: Works without internet once models are downloaded
+* Supports grades **1 to 6** of elementary school.
+* Shows subjects based on the selected grade.
+* Two learning modes:
 
-### 🧠 **Multiple AI Models**
-- **Gemma3**: Google's latest model, optimized for educational content
-- **DeepSeek Coder**: Specialized for programming and computer science
-- **Llama3**: Meta's powerful general-purpose model
-- **Auto-Detection**: Automatically discovers installed Ollama models
+  * **Explain:** simple, step-by-step explanations adapted to the student's grade.
+  * **Quiz:** generates educational questions based on the selected subject and textbook content.
+* Maintains conversation context during the session.
+* Uses retrieved textbook content as the main source for educational responses.
+* Shows retrieved textbook sources, including grade, subject, page, and file.
 
-## 🚀 Quick Start
+### Teacher Panel
 
-### Prerequisites
+* Enter the student's name, grade, and subject.
+* Record the student's **weak skills** and additional **teacher notes**.
+* Generate a personalized worksheet with **5 to 10 questions**.
+* Questions are designed around the student's specific weaknesses rather than as a generic test.
+* Supports different question types such as:
 
-1. **Python 3.7+** installed on your system
-2. **Ollama** installed and running ([Download Ollama](https://ollama.ai/))
+  * Multiple choice
+  * True/false
+  * Fill in the blank
+  * Short answer
+  * Problem solving
+* Questions include a difficulty level and a non-revealing hint.
+* Teachers can edit questions and hints before generating the final worksheet.
+* Generates a printable **A4 PDF worksheet** with Persian RTL layout.
 
-### Installation
+### Textbook RAG
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/hari7261/AI-Tutor.git
-   cd AI-Tutor
-   ```
+The application uses the Iranian elementary-school textbooks as a knowledge source.
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+The RAG pipeline:
 
-3. **Install AI models** (choose one or more)
-   ```bash
-   # Recommended: Gemma3 (best for general education)
-   ollama pull gemma3
-   
-   # For coding and computer science
-   ollama pull deepseek-coder
-   
-   # Alternative general-purpose model
-   ollama pull llama3
-   ```
-
-4. **Start Ollama server** (if not already running)
-   ```bash
-   ollama serve
-   ```
-
-5. **Run the application**
-   ```bash
-   streamlit run app.py
-   ```
-
-6. **Open your browser** and navigate to `http://localhost:8501`
-
-## 🎮 How to Use
-
-### 1. Configure Your Learning Preferences
-- **Education Level**: Select your current academic level
-- **Subject**: Choose the subject you want to study
-- **Mode**: Pick between explanation or quiz generation
-- **AI Model**: The app will automatically detect and list available models
-
-### 2. Ask Questions or Request Topics
-- **Explanation Mode**: "Explain photosynthesis" or "How does machine learning work?"
-- **Quiz Mode**: "Create a quiz about World War 2" or "Test me on calculus derivatives"
-
-### 3. Interactive Learning
-- Get detailed explanations with examples
-- Receive custom quizzes with immediate feedback
-- Build on previous conversations for deeper understanding
-
-## 📁 Project Structure
-
-```
-AI-Tutor/
-├── app.py                 # Main Streamlit application
-├── requirements.txt       # Python dependencies
-├── README.md             # Project documentation
-├── LICENSE               # MIT License
-├── .gitignore           # Git ignore rules
-├── assets/              # Images and media
-│   └── demo.gif         # Application demo
-├── docs/                # Additional documentation
-│   ├── installation.md  # Detailed installation guide
-│   ├── usage.md         # Usage examples and tips
-│   └── troubleshooting.md # Common issues and solutions
-├── config/              # Configuration files
-│   └── models.yaml      # Model configuration
-└── tests/               # Test files
-    └── test_app.py      # Unit tests
+```text
+Textbook PDFs
+     |
+     v
+PDF text extraction
+     |
+     v
+Chunking
+(1000 chars / 150 overlap)
+     |
+     v
+BAAI/bge-m3 embeddings
+     |
+     v
+FAISS vector index
+     |
+     v
+Semantic retrieval
+     |
+     v
+Grade + subject filtering
+     |
+     v
+Relevant textbook context
+     |
+     v
+Local Ollama model
 ```
 
-## 🧩 Core Modules
+Textbook PDFs are extracted with **PyMuPDF**, split into overlapping chunks, embedded with **`BAAI/bge-m3`**, and stored in a **FAISS inner-product index** together with metadata such as grade, subject, page, and source file.
 
-### 1. **Model Detection (`get_available_models()`)**
-- Automatically discovers installed Ollama models
-- Handles different API response formats
-- Prioritizes models based on educational performance
-- Provides fallback options and error handling
+For each request, retrieval is restricted to the selected grade and subject before the retrieved context is passed to the language model.
 
-### 2. **Education Level Adaptation**
-- Adjusts explanation complexity based on selected level
-- Customizes vocabulary and examples
-- Scales problem difficulty appropriately
+## Tech Stack
 
-### 3. **Subject-Specific Prompting**
-- Tailors AI responses to subject context
-- Incorporates subject-specific terminology
-- Provides relevant examples and analogies
+* **Python**
+* **Streamlit** — web interface
+* **Ollama** — local LLM inference
+* **Sentence Transformers** — embeddings
+* **BAAI/bge-m3** — embedding model
+* **FAISS** — vector search
+* **PyMuPDF** — PDF text extraction
+* **WeasyPrint** — worksheet PDF generation
+* **Yekan Bakh** — Persian RTL UI and PDF typography
 
-### 4. **Streaming Response Handler**
-- Real-time response display for better user experience
-- Handles connection errors gracefully
-- Provides visual feedback during generation
+The current dependency set is defined in `requirements.txt`.
 
-### 5. **Session Management**
-- Maintains conversation history
-- Preserves context across interactions
-- Enables follow-up questions and clarifications
+## Project Structure
 
-## 🔧 Configuration
-
-### Model Priority
-The application prioritizes models in the following order:
-1. `gemma3:latest` - Best for general education
-2. `deepseek-coder` - Optimal for programming topics
-3. `llama3` - Reliable general-purpose alternative
-
-### Custom Model Configuration
-Edit `config/models.yaml` to customize model preferences:
-
-```yaml
-models:
-  preferred_order:
-    - "gemma3:latest"
-    - "deepseek-coder"
-    - "llama3"
-  
-  subject_recommendations:
-    "Computer Science": "deepseek-coder"
-    "Math": "gemma3"
-    "Physics": "gemma3"
+```text
+educational-assistant-agent/
+├── app.py
+├── pages/
+│   ├── پنل_دانش‌آموز.py
+│   └── پنل_معلم.py
+├── services/
+│   ├── ai.py
+│   ├── worksheet_pdf.py
+│   └── rag/
+│       ├── chunker.py
+│       ├── embedder.py
+│       ├── pdf_loader.py
+│       ├── retriever.py
+│       └── vector_store.py
+├── prompts/
+│   └── quiz_prompts.py
+├── scripts/
+│   ├── index_books.py
+│   └── test_embedding.py
+├── utils/
+├── config/
+├── docs/
+├── fonts/
+├── assets/
+├── tests/
+├── requirements.txt
+└── requirements-dev.txt
 ```
 
-## 🛠️ Development
+## Installation
 
-### Setting up Development Environment
+### 1. Clone the repository
 
-1. **Fork the repository**
-2. **Create a virtual environment**
-   ```bash
-   python -m venv ai-tutor-env
-   source ai-tutor-env/bin/activate  # On Windows: ai-tutor-env\Scripts\activate
-   ```
+```bash
+git clone https://github.com/zahraEsn/educational-assistant-agent.git
+cd educational-assistant-agent
+```
 
-3. **Install development dependencies**
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
+### 2. Create a virtual environment
 
-4. **Run tests**
-   ```bash
-   pytest tests/
-   ```
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
 
-### Code Style
-- Follow PEP 8 guidelines
-- Use type hints where appropriate
-- Add docstrings to functions and classes
-- Maintain test coverage above 80%
+On Windows:
 
-## 🐛 Troubleshooting
+```powershell
+.venv\Scripts\activate
+```
 
-### Common Issues
+### 3. Install dependencies
 
-**"No Ollama models found"**
-- Ensure Ollama is running: `ollama serve`
-- Check installed models: `ollama list`
-- Install a model: `ollama pull gemma3`
+```bash
+pip install -r requirements.txt
+```
 
-**Connection errors**
-- Verify Ollama is accessible on default port (11434)
-- Check firewall settings
-- Restart Ollama service
+### 4. Install and run Ollama
 
-**Performance issues**
-- Use smaller models for better speed
-- Ensure sufficient RAM (8GB+ recommended)
-- Close unnecessary applications
+Install Ollama and make sure it is running.
 
-See [docs/troubleshooting.md](docs/troubleshooting.md) for detailed solutions.
+For example, install a model such as:
 
-## 🤝 Contributing
+```bash
+ollama pull gemma3
+```
 
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+The application automatically detects installed Ollama models and presents them in the UI.
 
-### Ways to Contribute
-- 🐛 Report bugs and issues
-- 💡 Suggest new features
-- 📖 Improve documentation
-- 🧪 Add test cases
-- 🎨 Enhance UI/UX
+## Preparing the Textbook Knowledge Base
 
-## 📊 Performance Metrics
+Place the textbook PDFs inside:
 
-| Model | Size | Speed | Education Quality |
-|-------|------|-------|------------------|
-| Gemma3 | 3.3GB | Fast | ⭐⭐⭐⭐⭐ |
-| DeepSeek Coder | 776MB | Very Fast | ⭐⭐⭐⭐ (CS Topics) |
-| Llama3 | 4.7GB | Medium | ⭐⭐⭐⭐ |
+```text
+data/books/
+```
 
-## 🗺️ Roadmap
+Organize them by grade:
 
-- [ ] **Multi-language Support** - Add support for multiple languages
-- [ ] **Voice Integration** - Voice-to-text and text-to-voice
-- [ ] **Progress Tracking** - Learning progress and analytics
-- [ ] **Study Plans** - Automated curriculum generation
-- [ ] **Collaborative Learning** - Share sessions with classmates
-- [ ] **Mobile App** - Native mobile applications
+```text
+data/
+└── books/
+    ├── اول/
+    │   ├── ریاضی.pdf
+    │   ├── فارسی.pdf
+    │   └── ...
+    ├── دوم/
+    │   ├── ریاضی.pdf
+    │   └── ...
+    └── ششم/
+        ├── ریاضی.pdf
+        └── ...
+```
 
-## 📄 License
+Then build the vector index:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+python scripts/index_books.py
+```
 
-## 🙏 Acknowledgments
+The indexing script:
 
-- [Ollama](https://ollama.ai/) for providing the local AI infrastructure
-- [Streamlit](https://streamlit.io/) for the amazing web framework
-- [Google](https://ai.google.dev/) for the Gemma model family
-- [DeepSeek](https://deepseek.com/) for the specialized coding model
+1. Finds all textbook PDFs under `data/books`.
+2. Extracts text page by page.
+3. Splits pages into overlapping chunks.
+4. Creates `bge-m3` embeddings.
+5. Builds the FAISS index.
+6. Saves the index and metadata under:
 
-## 📞 Support
+```text
+data/vector_store/
+├── index.faiss
+└── metadata.json
+```
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/hari7261/AI-Tutor/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/hari7261/AI-Tutor/discussions)
-- 📧 **Email**: [Contact Us](mailto:your-email@example.com)
+This workflow is implemented in `scripts/index_books.py`.
 
----
+## Run the Application
 
-<div align="center">
-  <p>Made with ❤️ for learners everywhere</p>
-  <p>⭐ Star this repo if you find it helpful!</p>
-</div>
+Start Streamlit with:
+
+```bash
+streamlit run app.py
+```
+
+Then open:
+
+```text
+http://localhost:8501
+```
+
+The main dashboard provides access to:
+
+* Student Panel
+* Teacher Panel
+
+## How Personalization Works
+
+The teacher provides:
+
+```text
+Grade
+Subject
+Student weaknesses
+Teacher notes
+Number of questions
+```
+
+The system first retrieves relevant textbook chunks for that grade and subject. These retrieved materials are then included in the worksheet-generation prompt along with the student's weaknesses and teacher notes.
+
+The quiz-generation prompt explicitly requires:
+
+* questions to target the student's weaknesses,
+* difficulty progression from easy to hard,
+* varied question types,
+* short and age-appropriate wording,
+* meaningful hints,
+* no answer or solution fields,
+* valid JSON output.
+
+## Persian and RTL Support
+
+The application is designed for Persian-speaking students and teachers.
+
+It includes:
+
+* Persian UI text
+* Right-to-left layout
+* Persian typography using Yekan Bakh
+* RTL PDF worksheets
+* Persian page numbering
+* Grade-specific Persian school subjects
+
+The global UI styles explicitly configure RTL direction and Yekan Bakh for Streamlit inputs, labels, sidebar, buttons, and other components.
+
+## Design Goals
+
+The project is built around four main ideas:
+
+**Personalized learning**
+Practice should target what the student actually struggles with.
+
+**Textbook-grounded answers**
+The system should prefer the relevant school textbook instead of relying only on the model's general knowledge.
+
+**Teacher in the loop**
+Teachers define the student's weaknesses and can review and edit generated worksheets before using them.
+
+**Local AI**
+The language model runs through Ollama locally, keeping the main tutoring and worksheet-generation workflow on the user's machine.
+
+## Current Status
+
+This project is an active development project. The current implementation focuses on:
+
+* Persian elementary education
+* Student tutoring
+* Teacher-generated personalized worksheets
+* Textbook RAG
+* Local Ollama models
+* PDF worksheet generation
+
+## Future Improvements
+
+Planned areas for improvement include:
+
+* Better evaluation of generated questions
+* Improved retrieval quality
+* More robust structured-output validation
+* Student progress tracking
+* Learning history and performance analytics
+* More educational content and textbook coverage
+* Better worksheet generation and customization
