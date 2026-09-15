@@ -4,6 +4,7 @@ import ollama
 import streamlit as st
 
 from prompts.quiz_prompts import build_personalized_quiz_prompt
+from services.rag.retriever import build_context, retrieve
 
 
 # Function to get available models
@@ -75,13 +76,66 @@ def generate_personalized_quiz(
     question_count: int,
 ) -> dict:
 
+    retrieval_query = f"""
+موضوع درس: {subject}
+
+ضعف‌های دانش‌آموز:
+{weaknesses}
+
+توضیحات معلم:
+{teacher_notes}
+""".strip()
+
+    print("\n" + "=" * 80)
+    print("START RAG")
+    print("grade:", education_level)
+    print("subject:", subject)
+    print("weaknesses:", weaknesses)
+    print("teacher_notes:", teacher_notes)
+    print("=" * 80)
+
+    retrieved_chunks = retrieve(
+        query=retrieval_query,
+        grade=education_level,
+        subject=subject,
+        top_k=4,
+        candidate_k=100,
+    )
+
+    rag_context = build_context(retrieved_chunks)
+
+    # ~~~~~~~~~~~~~~~~ temp ~~~~~~~~~~~~~~~~
+    print("=" * 80)
+    print("RAG RETRIEVAL")
+    print(f"grade: {education_level}")
+    print(f"subject: {subject}")
+    print(f"results: {len(retrieved_chunks)}")
+
+    for i, chunk in enumerate(retrieved_chunks, start=1):
+        print(
+            f"{i}. "
+            f"page={chunk['page']} "
+            f"score={chunk['score']:.4f} "
+            f"source={chunk['source']}"
+        )
+
+    print("=" * 80)
+    # ~~~~~~~~~~~~~~~~ temp ~~~~~~~~~~~~~~~~
+
     system_prompt = build_personalized_quiz_prompt(
         education_level=education_level,
         subject=subject,
         weaknesses=weaknesses,
         teacher_notes=teacher_notes,
         question_count=question_count,
+        rag_context=rag_context,
     )
+
+    print("\n" + "=" * 80)
+    print("RAG CONTEXT LENGTH:", len(rag_context))
+    print("RAG CONTEXT:")
+    print(rag_context)
+    print("=" * 80)
 
     user_prompt = f"""
     برای این دانش‌آموز یک کاربرگ شخصی‌سازی‌شده تولید کن.

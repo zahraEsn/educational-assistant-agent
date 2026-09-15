@@ -49,10 +49,9 @@ def apply_global_css() -> None:
                 direction: rtl;
             }}
 
-            .stApp,
-            .stApp * {{
-                font-family: 'Yekan Bakh', sans-serif !important;
-            }}
+						.stApp {{
+								font-family: 'Yekan Bakh', sans-serif !important;
+						}}
 
 
             /* =========================
@@ -95,8 +94,7 @@ def apply_global_css() -> None:
                Markdown
             ========================= */
 
-            [data-testid="stMarkdownContainer"],
-            [data-testid="stMarkdownContainer"] * {{
+            [data-testid="stMarkdownContainer"] {{
                 font-family: 'Yekan Bakh', sans-serif !important;
                 direction: rtl;
                 text-align: right;
@@ -240,6 +238,14 @@ def apply_global_css() -> None:
                 display: none !important;
             }}
 
+						.emoji,
+						[data-testid="stMarkdownContainer"] .emoji {{
+								font-family:
+										"Apple Color Emoji",
+										"Segoe UI Emoji",
+										"Noto Color Emoji",
+										sans-serif !important;
+						}}
         </style>
         """,
         unsafe_allow_html=True,
